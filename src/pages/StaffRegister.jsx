@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { loadStaff, addStaff, removeStaff } from '../store/staffStore';
 
+// 区分の循環順序 (クリックで次へ切り替え)
+const TYPE_CYCLE = ['社員', '登録'];
+function nextType(t) {
+  const i = TYPE_CYCLE.indexOf(t);
+  return TYPE_CYCLE[(i + 1) % TYPE_CYCLE.length];
+}
+
 // ============ スタッフ登録画面 ============
 // 氏名と区分(社員/登録)をブラウザに保存。
 // シフト出力時、登録済スタッフは区分が自動補完される。
@@ -21,6 +28,13 @@ export default function StaffRegister({ onBack }) {
   function handleRemove(n) {
     if (!confirm(`「${n}」を削除しますか？`)) return;
     setList(removeStaff(n));
+  }
+
+  function handleToggleType(staff) {
+    // クリックで「社員→登録→社員」と循環。リスト上の区分をその場で更新
+    const newType = nextType(staff.type);
+    const newList = addStaff(staff.name, newType); // 既存名は上書きされる
+    setList(newList);
   }
 
   function handleKeyDown(e) {
@@ -219,10 +233,12 @@ export default function StaffRegister({ onBack }) {
                 }}
               >
                 <span style={{ flex: 1, fontSize: 14, letterSpacing: '0.05em' }}>{s.name}</span>
-                <span
+                <button
+                  onClick={() => handleToggleType(s)}
+                  title="クリックで社員⇔登録を切り替え"
                   style={{
                     fontSize: 11,
-                    padding: '3px 10px',
+                    padding: '4px 12px',
                     background:
                       s.type === '社員'
                         ? 'rgba(59, 130, 246, 0.18)'
@@ -235,10 +251,13 @@ export default function StaffRegister({ onBack }) {
                     color: s.type === '社員' ? '#93c5fd' : '#d8b4fe',
                     borderRadius: 3,
                     letterSpacing: '0.1em',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
                   }}
                 >
                   {s.type}
-                </span>
+                </button>
                 <button
                   onClick={() => handleRemove(s.name)}
                   style={{

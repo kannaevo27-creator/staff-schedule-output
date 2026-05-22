@@ -1447,42 +1447,6 @@ function DetectedStaffItem({ name, checked, onToggle, shift, onShiftChange, type
             overflow: 'hidden',
             textOverflow: 'ellipsis'
           }}>{name}</span>
-          {!registered && (
-            <>
-              <span
-                title="このスタッフはまだ登録されていません"
-                style={{
-                  pointerEvents: 'none',
-                  fontSize: 10,
-                  padding: '2px 6px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.5)',
-                  color: '#fca5a5',
-                  borderRadius: 3,
-                  letterSpacing: '0.1em',
-                  flexShrink: 0
-                }}
-              >未登録</span>
-              {onRegister && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRegister(); }}
-                  title={`「${name}」を現在の区分「${type}」で登録`}
-                  style={{
-                    fontSize: 10,
-                    padding: '2px 8px',
-                    background: 'rgba(34, 197, 94, 0.15)',
-                    border: '1px solid rgba(34, 197, 94, 0.5)',
-                    color: '#bbf7d0',
-                    fontFamily: 'inherit',
-                    letterSpacing: '0.1em',
-                    borderRadius: 3,
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
-                >＋登録</button>
-              )}
-            </>
-          )}
         </div>
 
         {/* 社員/登録 トグル(チェック時のみ表示) */}
@@ -1529,6 +1493,46 @@ function DetectedStaffItem({ name, checked, onToggle, shift, onShiftChange, type
           </div>
         )}
       </div>
+
+      {/* 1.5段目: 未登録警告 + マスター追加ボタン (未登録かつチェック時) */}
+      {checked && !registered && (
+        <div style={{
+          marginTop: 6,
+          marginLeft: 26,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <span
+            style={{
+              fontSize: 10,
+              padding: '2px 6px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              color: '#fca5a5',
+              borderRadius: 3,
+              letterSpacing: '0.1em'
+            }}
+          >未登録</span>
+          {onRegister && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRegister(); }}
+              title={`「${name}」を現在の区分「${type}」でマスター追加`}
+              style={{
+                fontSize: 10,
+                padding: '3px 10px',
+                background: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.55)',
+                color: '#bbf7d0',
+                fontFamily: 'inherit',
+                letterSpacing: '0.1em',
+                borderRadius: 3,
+                cursor: 'pointer'
+              }}
+            >＋マスター追加</button>
+          )}
+        </div>
+      )}
 
       {/* 2段目: 時間入力欄(チェック時のみ表示) */}
       {checked && (
