@@ -45,6 +45,20 @@ function detectColumns(header) {
   return map;
 }
 
+// 日付文字列を「数値の配列」に分解して比較する。
+// "5/1"・"5/10"・"5/2" を辞書順でなく日付順に並べるため。
+// "5/1"=[5,1], "5/10"=[5,10], "12/3"=[12,3], "2025-05-01"=[2025,5,1] のように要素ごとに数値比較
+function compareDates(a, b) {
+  const partsA = String(a).split(/[\/\-年月日\s.]/).filter(Boolean).map(Number);
+  const partsB = String(b).split(/[\/\-年月日\s.]/).filter(Boolean).map(Number);
+  for (let i = 0; i < Math.min(partsA.length, partsB.length); i++) {
+    const x = partsA[i], y = partsB[i];
+    if (Number.isNaN(x) || Number.isNaN(y)) return String(a).localeCompare(String(b));
+    if (x !== y) return x - y;
+  }
+  return partsA.length - partsB.length;
+}
+
 function parseTime(str) {
   if (!str) return null;
   str = String(str).trim();
@@ -627,7 +641,7 @@ export default function StaffSchedule({ onBack }) {
       }
 
       const users = [...userSet].sort();
-      const dates = [...dateSet].sort();
+      const dates = [...dateSet].sort(compareDates);
       setParsedRows(accumulated);
       setAllUsers(users);
       setAllDates(dates);
