@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { generateXlsx } from '../xlsxGenerator';
-import { loadStaff, lookupType } from '../store/staffStore';
+import { loadStaff, lookupType, addStaff } from '../store/staffStore';
 
 // ============ CSV パーサ ============
 function parseCSV(text) {
@@ -988,6 +988,15 @@ export default function StaffSchedule({ onBack }) {
                         name={s}
                         checked={selectedStaff.has(s)}
                         registered={registeredNames.has(s)}
+                        onRegister={() => {
+                          const currentType = staffTypes[s] || '社員';
+                          addStaff(s, currentType);
+                          setRegisteredNames(prev => {
+                            const next = new Set(prev);
+                            next.add(s);
+                            return next;
+                          });
+                        }}
                         shift={staffShifts[s] || { start: '07:00', end: '21:00' }}
                         type={staffTypes[s] || '社員'}
                         onShiftChange={(newShift) => {
@@ -1359,7 +1368,7 @@ function UserCheckbox({ user, checked, onToggle }) {
   );
 }
 
-function DetectedStaffItem({ name, checked, onToggle, shift, onShiftChange, type, onTypeChange, registered = true }) {
+function DetectedStaffItem({ name, checked, onToggle, shift, onShiftChange, type, onTypeChange, registered = true, onRegister }) {
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -1439,20 +1448,40 @@ function DetectedStaffItem({ name, checked, onToggle, shift, onShiftChange, type
             textOverflow: 'ellipsis'
           }}>{name}</span>
           {!registered && (
-            <span
-              title="スタッフ登録画面で区分を保存しておくと、次回から自動補完されます"
-              style={{
-                pointerEvents: 'none',
-                fontSize: 10,
-                padding: '2px 6px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.5)',
-                color: '#fca5a5',
-                borderRadius: 3,
-                letterSpacing: '0.1em',
-                flexShrink: 0
-              }}
-            >未登録</span>
+            <>
+              <span
+                title="このスタッフはまだ登録されていません"
+                style={{
+                  pointerEvents: 'none',
+                  fontSize: 10,
+                  padding: '2px 6px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: '#fca5a5',
+                  borderRadius: 3,
+                  letterSpacing: '0.1em',
+                  flexShrink: 0
+                }}
+              >未登録</span>
+              {onRegister && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRegister(); }}
+                  title={`「${name}」を現在の区分「${type}」で登録`}
+                  style={{
+                    fontSize: 10,
+                    padding: '2px 8px',
+                    background: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid rgba(34, 197, 94, 0.5)',
+                    color: '#bbf7d0',
+                    fontFamily: 'inherit',
+                    letterSpacing: '0.1em',
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >＋登録</button>
+              )}
+            </>
           )}
         </div>
 
