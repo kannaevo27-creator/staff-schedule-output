@@ -11,6 +11,14 @@ import XlsxPopulate from 'xlsx-populate/browser/xlsx-populate';
 const TEMPLATE_URL = `${import.meta.env.BASE_URL}template.xlsx`;
 const DEFAULT_SHEET_NAME = 'ベース'; // 後で日付ごとのシートに切り替え予定
 
+// === 色定義 ===
+const COLOR_WORKING = '00FF00';   // 出勤時間ベース色 (緑)
+// サービス種別ごとの利用者名セル色（出勤時間の緑を上書き）
+// 後日 身体2 / 生活1 等を追加する場合はここに足す
+const SERVICE_COLOR = {
+  '身１': 'CC99FF',  // 身体1 → 薄紫
+};
+
 // === ヘルパー: 1-indexed の列番号から Excel の列文字 (A,B,...,AA,AB,...) に変換 ===
 function colNumToLetter(n) {
   let s = '';
@@ -20,6 +28,16 @@ function colNumToLetter(n) {
     n = Math.floor((n - 1) / 26);
   }
   return s;
+}
+
+// === ヘルパー: 時刻文字列 "7:00" → 15分スロットインデックス (0〜95) ===
+function timeToSlot(timeStr) {
+  if (!timeStr) return null;
+  const m = String(timeStr).match(/(\d{1,2})[:時](\d{1,2})/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  return h * 4 + Math.floor(min / 15);
 }
 
 // === メイン: グリッドデータをひな形に流し込んで Excel をダウンロード ===
@@ -58,22 +76,39 @@ export async function generateXlsx({ workingStaff, staffShifts, staffTypes, grid
   workingStaff.forEach((staff, idx) => {
     const staffType = staffTypes[staff] || '社員';
     const staffGrid = grid[staff] || [];
+    const shift = staffShifts[staff] || {};
 
-    // 上段: A=曜日(最初のスタッフのみ), B=氏名, C～CT(96スロット)=利用者名(isStartのみ)
+    // ----- 上段: 利用者名行 -----
     if (idx === 0 && weekday) {
       sheet.cell(`A${rowIdx}`).value(weekday);
     }
     sheet.cell(`B${rowIdx}`).value(staff);
+
+    // (1) 出勤時間の範囲を緑(#00FF00)で塗る (ベース色)
+    const startSlot = timeToSlot(shift.start);
+    const endSlot = timeToSlot(shift.end);
+    if (startSlot != null && endSlot != null && endSlot > startSlot) {
+      for (let i = startSlot; i < endSlot; i++) {
+        const colLetter = colNumToLetter(3 + i);
+        sheet.cell(`${colLetter}${rowIdx}`).style('fill', COLOR_WORKING);
+      }
+    }
+
+    // (2) 利用者名を書き込み、サービス種別に応じて色を上書き
     for (let i = 0; i < 96; i++) {
       const cell = staffGrid[i];
       if (cell && cell.isStart && cell.user) {
-        const colLetter = colNumToLetter(3 + i); // C=3 始まり
+        const colLetter = colNumToLetter(3 + i);
         sheet.cell(`${colLetter}${rowIdx}`).value(cell.user);
+        const overrideColor = SERVICE_COLOR[cell.code];
+        if (overrideColor) {
+          sheet.cell(`${colLetter}${rowIdx}`).style('fill', overrideColor);
+        }
       }
     }
     rowIdx++;
 
-    // 下段: B=区分, C～CT=サービスコード(isStartのみ)
+    // ----- 下段: 区分 + サービスコード行 (色なし) -----
     sheet.cell(`B${rowIdx}`).value(staffType);
     for (let i = 0; i < 96; i++) {
       const cell = staffGrid[i];
