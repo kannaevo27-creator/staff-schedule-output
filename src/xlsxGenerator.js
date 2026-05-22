@@ -40,6 +40,20 @@ function timeToSlot(timeStr) {
   return h * 4 + Math.floor(min / 15);
 }
 
+// === ヘルパー: isStart のサービスが何スロット使うかを計算 ===
+// 1枠 = 1〜15分以内なので、25分のサービスは 2枠を使う。
+// staffGrid 上では「isStart=true の先頭セル + isStart=false の後続セル」の連続として表現される。
+// 次の isStart に出会うか staffGrid に値が無くなったら終了。
+function calcServiceLen(staffGrid, startIdx) {
+  let len = 1;
+  while (startIdx + len < 96) {
+    const next = staffGrid[startIdx + len];
+    if (!next || next.isStart) break;
+    len++;
+  }
+  return len;
+}
+
 // === メイン: グリッドデータをひな形に流し込んで Excel をダウンロード ===
 export async function generateXlsx({ workingStaff, staffShifts, staffTypes, grid, selectedDate }) {
   // 1. ひな形を fetch
@@ -94,27 +108,38 @@ export async function generateXlsx({ workingStaff, staffShifts, staffTypes, grid
       }
     }
 
-    // (2) 利用者名を書き込み、サービス種別に応じて色を上書き
+    // (2) 利用者名 + サービス色 (全枠を塗る、利用者名は先頭枠のみ)
     for (let i = 0; i < 96; i++) {
       const cell = staffGrid[i];
-      if (cell && cell.isStart && cell.user) {
-        const colLetter = colNumToLetter(3 + i);
-        sheet.cell(`${colLetter}${rowIdx}`).value(cell.user);
+      if (cell && cell.isStart) {
+        const len = calcServiceLen(staffGrid, i);
+        // 先頭枠に利用者名
+        if (cell.user) {
+          sheet.cell(`${colNumToLetter(3 + i)}${rowIdx}`).value(cell.user);
+        }
+        // サービス色を全枠に塗る (出勤時間の緑を上書き)
         const overrideColor = SERVICE_COLOR[cell.code];
         if (overrideColor) {
-          sheet.cell(`${colLetter}${rowIdx}`).style('fill', overrideColor);
+          for (let j = 0; j < len; j++) {
+            sheet.cell(`${colNumToLetter(3 + i + j)}${rowIdx}`).style('fill', overrideColor);
+          }
         }
       }
     }
     rowIdx++;
 
-    // ----- 下段: 区分 + サービスコード行 (色なし) -----
+    // ----- 下段: 区分 + サービスコード行 (塗りなし、複数枠は結合) -----
     sheet.cell(`B${rowIdx}`).value(staffType);
     for (let i = 0; i < 96; i++) {
       const cell = staffGrid[i];
       if (cell && cell.isStart && cell.code) {
-        const colLetter = colNumToLetter(3 + i);
-        sheet.cell(`${colLetter}${rowIdx}`).value(cell.code);
+        const len = calcServiceLen(staffGrid, i);
+        const startCol = colNumToLetter(3 + i);
+        sheet.cell(`${startCol}${rowIdx}`).value(cell.code);
+        if (len > 1) {
+          const endCol = colNumToLetter(3 + i + len - 1);
+          sheet.range(`${startCol}${rowIdx}:${endCol}${rowIdx}`).merged(true);
+        }
       }
     }
     rowIdx++;
