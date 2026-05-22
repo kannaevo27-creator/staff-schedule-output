@@ -761,17 +761,6 @@ export default function StaffSchedule({ onBack }) {
 
   return (
     <div style={baseStyle}>
-      {/* 月のアクセント */}
-      <div style={{
-        position: 'fixed', top: 30, right: 60,
-        width: 40, height: 40,
-        background: 'radial-gradient(circle, #fef3c7 0%, #fbbf24 60%, transparent 70%)',
-        borderRadius: '50%',
-        opacity: 0.6,
-        clipPath: 'polygon(40% 0%, 100% 0%, 100% 100%, 40% 100%, 70% 70%, 70% 30%)',
-        pointerEvents: 'none'
-      }} />
-
       <header style={{ marginBottom: 32, position: 'relative' }}>
         {onBack && (
           <button
