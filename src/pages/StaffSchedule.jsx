@@ -91,7 +91,7 @@ function loadPdfJs() {
 }
 
 // ============ サービスコード変換 ============
-// サービス名 → 短縮コード(身１/身２/生１/生２/通１/重訪Ⅱ/移動/家事/個別)
+// サービス名 → 短縮コード(身1/身2/生1/生2/通1/重訪Ⅱ/移動/家事/個別)
 // この関数は上の方で定義済みのclassifyServiceとは別目的: Excel/HTML出力用の短縮コード
 // 注: classifyService と toServiceCode は別関数として既存
 
@@ -379,16 +379,16 @@ function classifyService(svc) {
 function toServiceCode(svc) {
   if (!svc) return '';
   const s = svc.toString();
-  // 身体介護(夜間含む) → 身１
-  if (/身体介護[1１]/.test(s)) return '身１';
-  if (/身体介護[22]/.test(s)) return '身２';
-  if (/身体介護[33]/.test(s)) return '身３';
+  // 身体介護(夜間含む) → 身1
+  if (/身体介護[1１]/.test(s)) return '身1';
+  if (/身体介護[2２]/.test(s)) return '身2';
+  if (/身体介護[3３]/.test(s)) return '身3';
   // 生活援助
-  if (/生活援助[11]/.test(s)) return '生１';
-  if (/生活援助[22]/.test(s)) return '生２';
-  if (/生活援助[33]/.test(s)) return '生３';
+  if (/生活援助[1１]/.test(s)) return '生1';
+  if (/生活援助[2２]/.test(s)) return '生2';
+  if (/生活援助[3３]/.test(s)) return '生3';
   // 通院等乗降介助
-  if (/通院.*乗降|乗降.*介助/.test(s)) return '通１';
+  if (/通院.*乗降|乗降.*介助/.test(s)) return '通1';
   // 障害福祉系
   if (/重訪|重度訪問/.test(s)) return '重訪Ⅱ';
   if (/移動支援|移動/.test(s)) return '移動';
